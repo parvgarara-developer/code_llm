@@ -1,0 +1,100 @@
+================================================================================
+Prompt 1
+Task: Write a Python function to add two numbers.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to add two numbers.
+
+### Response:
+def _self.________________________________________________linen(self._______):
+
+================================================================================
+Prompt 2
+Task: Write a Python function to check if a string is a palindrome.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to check if a string is a palindrome.
+
+### Response:
+def self._self._name_conter(self, self, name):
+
+================================================================================
+Prompt 3
+Task: Write a Python function to return the factorial of a number.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to return the factorial of a number.
+
+### Response:
+def _self._self.__logget_type(self._name):
+
+================================================================================
+Prompt 4
+Task: Write a Python function to find the maximum element in a list.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to find the maximum element in a list.
+
+### Response:
+def _self.______________________________):
+
+================================================================================
+Prompt 5
+Task: Write a Python function to count vowels in a string.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to count vowels in a string.
+
+### Response:
+def _self._path_tatte_set_tattr(self, self._path_name):
+
+================================================================================
+Prompt 6
+Task: Write a Python function to reverse a list without using built-in reverse().
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to reverse a list without using built-in reverse().
+
+### Response:
+def _self._loge_inter(self, self._textext_types):
+
+================================================================================
+Prompt 7
+Task: Write a Python function to remove duplicates from a list while keeping order.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to remove duplicates from a list while keeping order.
+
+### Response:
+def _set_self._name(self, self, self.__self, self._________):
+
+================================================================================
+Prompt 8
+Task: Write a Python function to check whether a number is prime.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to check whether a number is prime.
+
+### Response:
+def self._____________________________________________________) = self._____________________________________________________________________________________________________________________________________________________
+
+================================================================================
+Prompt 9
+Task: Write a Python function to merge two dictionaries.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to merge two dictionaries.
+
+### Response:
+def _self._ind(self._path_self._path_state_context_types):
+
+================================================================================
+Prompt 10
+Task: Write a Python function to compute the sum of digits of an integer.
+--------------------------------------------------------------------------------
+### Instruction:
+Write a Python function to compute the sum of digits of an integer.
+
+### Response:
+def _self._self._self._conter(self, self._context):
+

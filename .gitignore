@@ -1,0 +1,13 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Datasets and processed artifacts (large, regenerable)
+data/
+
+# Model weights that exceed GitHub's 100 MB file limit (kept locally only).
+# Regenerate with: python src/train_subword.py
+checkpoints/gpt_large_sharded.pt
+checkpoints/gpt_subword.pt
+checkpoints/gpt_subword_best.pt
