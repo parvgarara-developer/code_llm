@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLLM — GPT Code Playground</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="app-header">
+            <div class="header-logo">
+                <i class="fa-solid fa-brain-circuit logo-icon"></i>
+                <div class="logo-text">
+                    <h1>CodeLLM</h1>
+                    <span>GPT Trained from Scratch</span>
+                </div>
+            </div>
+            <div class="header-status">
+                <div id="backend-status-badge" class="status-badge status-offline">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Checking Backend Status...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-workspace">
+            <!-- Sidebar: Parameters & Configurations -->
+            <section class="sidebar-panel">
+                <div class="panel-section">
+                    <h3 class="section-title"><i class="fa-solid fa-sliders"></i> Model Settings</h3>
+                    
+                    <!-- Model Selection -->
+                    <div class="control-group">
+                        <label for="model-select">Target Architecture</label>
+                        <div class="select-wrapper">
+                            <select id="model-select">
+                                <option value="gpt_subword" selected>GPT Subword (15M Params - SP BPE)</option>
+                                <option value="gpt_opencode">GPT OpenCode (Legacy Char-level)</option>
+                                <option value="gpt_codesearchnet">GPT CodeSearchNet (Legacy Char-level)</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-arrow"></i>
+                        </div>
+                        <div id="model-details" class="control-info-text">Requires code_bpe.model and PyTorch</div>
+                    </div>
+
+                    <!-- Temperature -->
+                    <div class="control-group">
+                        <div class="slider-header">
+                            <label for="temp-slider">Temperature</label>
+                            <span id="temp-val" class="slider-value">0.80</span>
+                        </div>
+                        <input type="range" id="temp-slider" min="0.1" max="1.5" step="0.05" value="0.80">
+                        <div class="control-desc">Controls randomness: lower is more deterministic, higher is more creative.</div>
+                    </div>
+
+                    <!-- Top-K -->
+                    <div class="control-group">
+                        <div class="slider-header">
+                            <label for="topk-slider">Top-K Sampling</label>
+                            <span id="topk-val" class="slider-value">40</span>
+                        </div>
+                        <input type="range" id="topk-slider" min="1" max="100" step="1" value="40">
+                        <div class="control-desc">Limits the next-token pool to K most likely tokens.</div>
+                    </div>
+
+                    <!-- Top-P (Nucleus) -->
+                    <div class="control-group">
+                        <div class="slider-header">
+                            <label for="topp-slider">Top-P (Nucleus)</label>
+                            <span id="topp-val" class="slider-value">0.95</span>
+                        </div>
+                        <input type="range" id="topp-slider" min="0.1" max="1.0" step="0.05" value="0.95">
+                        <div class="control-desc">Filters tokens whose cumulative probability exceeds P.</div>
+                    </div>
+
+                    <!-- Max New Tokens -->
+                    <div class="control-group">
+                        <div class="slider-header">
+                            <label for="tokens-slider">Max Tokens</label>
+                            <span id="tokens-val" class="slider-value">256</span>
+                        </div>
+                        <input type="range" id="tokens-slider" min="16" max="512" step="16" value="256">
+                        <div class="control-desc">Absolute ceiling on the number of tokens to generate.</div>
+                    </div>
+
+                    <!-- Repetition Penalty -->
+                    <div class="control-group">
+                        <div class="slider-header">
+                            <label for="rep-slider">Repetition Penalty</label>
+                            <span id="rep-val" class="slider-value">1.15</span>
+                        </div>
+                        <input type="range" id="rep-slider" min="1.0" max="2.0" step="0.05" value="1.15">
+                        <div class="control-desc">Penalizes repeating token structures in the generated output.</div>
+                    </div>
+                </div>
+
+                <!-- Setup Card -->
+                <div class="panel-section setup-card">
+                    <h3 class="section-title"><i class="fa-solid fa-circle-info"></i> How to Connect</h3>
+                    <p>To run with actual PyTorch weights:</p>
+                    <pre class="setup-code">python ui_server.py</pre>
+                    <p class="setup-note">If backend is off, the playground automatically simulates token generation.</p>
+                </div>
+            </section>
+
+            <!-- Playground Center Canvas -->
+            <section class="playground-panel">
+                <!-- Prompt Area -->
+                <div class="playground-section card prompt-card">
+                    <div class="card-header">
+                        <h2><i class="fa-regular fa-keyboard"></i> Natural Language Prompt</h2>
+                        <div class="prompt-templates">
+                            <span class="template-tag" data-prompt="Write a Python function to check if a string is a palindrome.">Palindrome</span>
+                            <span class="template-tag" data-prompt="Write a Python function to count vowels in a string.">Vowels</span>
+                            <span class="template-tag" data-prompt="Write a Python function to reverse a linked list.">Reverse List</span>
+                            <span class="template-tag" data-prompt="Write a Python function to do binary search in a sorted array.">Binary Search</span>
+                            <span class="template-tag" data-prompt="Write a Python function to generate the Fibonacci sequence.">Fibonacci</span>
+                        </div>
+                    </div>
+                    <div class="textarea-container">
+                        <textarea id="prompt-input" placeholder="Type a request (e.g., 'Write a Python function to reverse a string') or select a template above..."></textarea>
+                        <button id="btn-clear-prompt" class="icon-btn" title="Clear prompt"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="action-footer">
+                        <button id="btn-generate" class="primary-btn">
+                            <i class="fa-solid fa-play"></i> Generate Code
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Code Editor Area -->
+                <div class="playground-section card output-card flex-grow">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-code"></i> Generated Output</h2>
+                        <div class="output-actions">
+                            <button id="btn-copy-code" class="secondary-btn" title="Copy code to clipboard">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="editor-container">
+                        <div class="line-numbers" id="line-numbers">
+                            <span>1</span>
+                        </div>
+                        <pre class="code-display"><code id="code-output" class="language-python"># Output will be generated here...</code></pre>
+                    </div>
+
+                    <!-- Output Stats Footer -->
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <span class="stat-label">Inference Time:</span>
+                            <span id="stat-time" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Tokens Generated:</span>
+                            <span id="stat-tokens" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Tokens / Sec:</span>
+                            <span id="stat-speed" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Hardware Device:</span>
+                            <span id="stat-device" class="stat-value">—</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Visualizer & Terminal Logs -->
+            <section class="visualizer-panel">
+                <!-- Interactive Tokenizer / Attention Visualizer -->
+                <div class="panel-section visualizer-card">
+                    <h3 class="section-title"><i class="fa-solid fa-eye"></i> Transformer Mechanics</h3>
+                    <div class="visualizer-container">
+                        <div class="vis-tab-header">
+                            <button class="vis-tab active" data-tab="attention">Attention Grid</button>
+                            <button class="vis-tab" data-tab="tokens">Token Shards</button>
+                        </div>
+                        <div class="vis-tab-content">
+                            <!-- Attention Matrix View -->
+                            <div id="vis-attention" class="tab-pane active">
+                                <div class="attention-description">
+                                    Visualizing Multi-Head Self-Attention layers weights:
+                                </div>
+                                <div class="attention-grid-wrapper">
+                                    <canvas id="attention-canvas" width="200" height="200"></canvas>
+                                </div>
+                                <div class="attention-legend">
+                                    <span>Query Token</span>
+                                    <span class="arrow"><i class="fa-solid fa-arrow-right"></i></span>
+                                    <span>Key Token Weight</span>
+                                </div>
+                            </div>
+                            <!-- Token Shards View -->
+                            <div id="vis-tokens" class="tab-pane">
+                                <div class="token-description">
+                                    How sentencepiece splits raw code into BPE token IDs:
+                                </div>
+                                <div id="token-chips-container" class="token-chips">
+                                    <div class="empty-chips">Generate code to view tokenized shards.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terminal logs -->
+                <div class="panel-section terminal-card">
+                    <div class="terminal-header">
+                        <span class="terminal-title"><i class="fa-solid fa-terminal"></i> Pipeline Console Logs</span>
+                        <button id="btn-clear-logs" class="icon-btn" title="Clear console"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <div class="terminal-body" id="terminal-body">
+                        <div class="terminal-line log-system">[SYSTEM] CodeLLM Console Initialized. Ready for inference.</div>
+                        <div class="terminal-line log-warn">[WARN] Backend offline: Using client-side simulation.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="index.js"></script>
+</body>
+</html>
