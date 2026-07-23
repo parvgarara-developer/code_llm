@@ -1,0 +1,9 @@
+{
+  "dataset": "humaneval",
+  "problems": 164,
+  "n_samples": 10,
+  "oracle": false,
+  "pass@1": 0.0,
+  "pass@10": 0.0,
+  "solved_at_least_once": 0
+}
