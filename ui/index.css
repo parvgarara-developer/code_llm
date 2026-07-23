@@ -1004,8 +1004,35 @@ body.light-theme ::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.2);
 }
 
-body.light-theme .logo-text h1 {
+body.light-theme .logo-text h1,
+body.light-theme .card-header h2,
+body.light-theme .section-title,
+body.light-theme .terminal-title {
     color: #0f172a;
+}
+
+body.light-theme .section-title {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .terminal-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .vis-tab:hover {
+    color: #0f172a;
+}
+
+body.light-theme textarea::placeholder {
+    color: #94a3b8;
+}
+
+body.light-theme .log-warn {
+    color: #b45309; /* Darker amber for contrast */
+}
+
+body.light-theme .log-error {
+    color: #b91c1c; /* Darker red for contrast */
 }
 
 /* ==========================================================================
