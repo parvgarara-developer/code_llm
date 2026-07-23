@@ -13,6 +13,11 @@
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
+    <!-- Animated Cyberpunk Backdrop -->
+    <div class="backdrop-grid"></div>
+    <div class="backdrop-glow blob-1"></div>
+    <div class="backdrop-glow blob-2"></div>
+
     <div class="app-container">
         <!-- Top Navigation -->
         <header class="app-header">
@@ -189,6 +194,10 @@
                         <div class="stat-item">
                             <span class="stat-label">Hardware Device:</span>
                             <span id="stat-device" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item sparkline-container" title="Neural computation wave">
+                            <span class="stat-label">Neural Logits Wave:</span>
+                            <canvas id="sparkline-canvas" width="140" height="24"></canvas>
                         </div>
                     </div>
                 </div>

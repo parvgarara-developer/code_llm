@@ -167,6 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
     checkBackendStatus();
     setInterval(checkBackendStatus, 15000); // Check status every 15s
     drawPlaceholderAttention();
+    setupCardTilts();
+    updateSparkline();
 });
 
 function setupEventListeners() {
@@ -797,4 +799,103 @@ function copyCodeToClipboard() {
 // Helper utilities
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// ==========================================================================
+// 3D Glass Card Tilts
+// ==========================================================================
+function setupCardTilts() {
+    const cards = document.querySelectorAll('.card, .panel-section');
+    
+    cards.forEach(card => {
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left; // x position within element
+            const y = e.clientY - rect.top;  // y position within element
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            // Calculate tilt angle (max 3 degrees to keep it elegant and readable)
+            const rotateX = ((centerY - y) / centerY) * 3;
+            const rotateY = ((x - centerX) / centerX) * 3;
+            
+            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+            
+            // Add dynamic lighting/shine effect
+            const percentX = (x / rect.width) * 100;
+            const percentY = (y / rect.height) * 100;
+            
+            const isLight = document.body.classList.contains('light-theme');
+            if (isLight) {
+                card.style.backgroundImage = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255, 255, 255, 0.4) 0%, var(--bg-card) 85%)`;
+            } else {
+                card.style.backgroundImage = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255, 255, 255, 0.04) 0%, var(--bg-card) 85%)`;
+            }
+        });
+        
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = '';
+            card.style.backgroundImage = '';
+        });
+    });
+}
+
+// ==========================================================================
+// Neural Wave Sparkline Visualizer
+// ==========================================================================
+let sparklinePoints = Array(25).fill(12);
+
+function updateSparkline() {
+    const canvas = document.getElementById('sparkline-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    
+    // Generate new point
+    let nextVal;
+    if (isGenerating && !isPaused) {
+        // High activity: noisy logits probabilities
+        nextVal = h / 2 + (Math.random() - 0.5) * h * 0.75;
+    } else if (isGenerating && isPaused) {
+        // Paused activity: flat but slight hover
+        nextVal = h / 2 + Math.sin(Date.now() / 100) * 1.5;
+    } else {
+        // Idle activity: very slow calm sine wave
+        nextVal = h / 2 + Math.sin(Date.now() / 600) * 2.5;
+    }
+    
+    sparklinePoints.push(nextVal);
+    sparklinePoints.shift();
+    
+    // Draw line
+    const isLight = document.body.classList.contains('light-theme');
+    const grad = ctx.createLinearGradient(0, 0, w, 0);
+    grad.addColorStop(0, '#6366f1'); // Indigo
+    grad.addColorStop(1, '#06b6d4'); // Cyan
+    
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    
+    // Drop shadow glow (only in dark mode for maximum contrast)
+    if (!isLight) {
+        ctx.shadowColor = 'rgba(6, 182, 212, 0.4)';
+        ctx.shadowBlur = 4;
+    } else {
+        ctx.shadowBlur = 0;
+    }
+    
+    ctx.beginPath();
+    const segmentWidth = w / (sparklinePoints.length - 1);
+    ctx.moveTo(0, sparklinePoints[0]);
+    for (let i = 1; i < sparklinePoints.length; i++) {
+        ctx.lineTo(i * segmentWidth, sparklinePoints[i]);
+    }
+    ctx.stroke();
+    
+    requestAnimationFrame(updateSparkline);
 }

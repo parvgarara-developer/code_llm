@@ -1075,4 +1075,111 @@ body.light-theme .hl-op { color: #d73a49; }
     border-color: rgba(239, 68, 68, 0.4) !important;
 }
 
+/* ==========================================================================
+   Smooth Transitions for 3D Card Tilts
+   ========================================================================== */
+.card, .panel-section {
+    transition: transform 0.15s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease, background-image 0.3s ease;
+    transform-style: preserve-3d;
+}
+
+/* ==========================================================================
+   Animated Cyberpunk Backdrop (Grid + Glowing Blobs)
+   ========================================================================== */
+.backdrop-grid {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -2;
+    background-image: 
+        linear-gradient(to right, rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+}
+
+.backdrop-glow {
+    position: fixed;
+    width: 600px;
+    height: 600px;
+    border-radius: 50%;
+    filter: blur(140px);
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.45;
+    transition: opacity 1s ease;
+}
+
+.blob-1 {
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.25) 0%, transparent 70%);
+    top: -100px;
+    left: -100px;
+    animation: floatBlob1 20s infinite alternate ease-in-out;
+}
+
+.blob-2 {
+    background: radial-gradient(circle, rgba(6, 182, 212, 0.2) 0%, transparent 70%);
+    bottom: -150px;
+    right: -100px;
+    animation: floatBlob2 25s infinite alternate ease-in-out;
+}
+
+body.light-theme .backdrop-glow {
+    opacity: 0.15;
+}
+
+body.light-theme .backdrop-grid {
+    background-image: 
+        linear-gradient(to right, rgba(99, 102, 241, 0.02) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(99, 102, 241, 0.02) 1px, transparent 1px);
+}
+
+@keyframes floatBlob1 {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(150px, 80px) scale(1.1);
+    }
+    100% {
+        transform: translate(-50px, 120px) scale(0.95);
+    }
+}
+
+@keyframes floatBlob2 {
+    0% {
+        transform: translate(0, 0) scale(1);
+    }
+    50% {
+        transform: translate(-120px, -100px) scale(0.9);
+    }
+    100% {
+        transform: translate(80px, 50px) scale(1.15);
+    }
+}
+
+/* ==========================================================================
+   Neural Wave Sparkline Styles
+   ========================================================================== */
+.sparkline-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+#sparkline-canvas {
+    border-radius: var(--radius-sm);
+    background: rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+body.light-theme #sparkline-canvas {
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+
 
