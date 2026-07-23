@@ -30,6 +30,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 PROCESSED_DIR = BASE_DIR / "data" / "processed"
 TOKENS_BIN = PROCESSED_DIR / "tokens_subword.bin"
 META_FILE = PROCESSED_DIR / "subword_meta.json"
+CLEAN_META = PROCESSED_DIR / "clean_meta.json"          # Phase 1 clean split
+TRAIN_BIN = PROCESSED_DIR / "tokens_train.bin"
+VAL_BIN = PROCESSED_DIR / "tokens_val.bin"
 CKPT_DIR = BASE_DIR / "checkpoints"
 CKPT_DIR.mkdir(parents=True, exist_ok=True)
 CKPT_FILE = CKPT_DIR / "gpt_subword.pt"
@@ -54,6 +57,8 @@ def parse_args():
     p.add_argument("--n-layer", type=int, default=6)
     p.add_argument("--dropout", type=float, default=0.1)
     p.add_argument("--val-frac", type=float, default=0.02)
+    p.add_argument("--no-clean", action="store_true",
+                   help="ignore the Phase 1 clean split, use the old positional split")
     p.add_argument("--resume", action="store_true")
     p.add_argument("--seed", type=int, default=1337)
     return p.parse_args()
@@ -80,14 +85,24 @@ def main():
     scaler = torch.cuda.amp.GradScaler(enabled=(device == "cuda" and not use_bf16))
     print(f"AMP dtype: {amp_dtype}  (GradScaler {'on' if scaler.is_enabled() else 'off'})")
 
-    meta = json.loads(META_FILE.read_text(encoding="utf-8"))
-    vocab_size = meta["vocab_size"]
-    data = np.memmap(TOKENS_BIN, dtype=np.uint16, mode="r")
-    n = len(data)
-    n_val = int(n * args.val_frac)
-    train_data = data[: n - n_val]
-    val_data = data[n - n_val:]
-    print(f"tokens: {n:,}  train: {len(train_data):,}  val: {len(val_data):,}")
+    # Prefer the Phase 1 clean split (separate, guaranteed-disjoint train/val
+    # bins) when available; otherwise fall back to the single-file positional
+    # split (which leaks and gives an untrustworthy val loss).
+    if not args.no_clean and CLEAN_META.exists() and TRAIN_BIN.exists() and VAL_BIN.exists():
+        meta = json.loads(CLEAN_META.read_text(encoding="utf-8"))
+        vocab_size = meta["vocab_size"]
+        train_data = np.memmap(TRAIN_BIN, dtype=np.uint16, mode="r")
+        val_data = np.memmap(VAL_BIN, dtype=np.uint16, mode="r")
+        print(f"[clean split] train: {len(train_data):,}  val: {len(val_data):,} tokens (disjoint)")
+    else:
+        meta = json.loads(META_FILE.read_text(encoding="utf-8"))
+        vocab_size = meta["vocab_size"]
+        data = np.memmap(TOKENS_BIN, dtype=np.uint16, mode="r")
+        n = len(data)
+        n_val = int(n * args.val_frac)
+        train_data = data[: n - n_val]
+        val_data = data[n - n_val:]
+        print(f"[positional split] tokens: {n:,}  train: {len(train_data):,}  val: {len(val_data):,}")
 
     block_size = args.block_size
 

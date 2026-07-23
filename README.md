@@ -227,6 +227,33 @@ Runs 10 standard coding prompts and writes results to
 python src/evaluate_subword.py
 ```
 
+### Step 6 — Benchmark correctness (pass@k)
+Eyeballing output only goes so far. [`src/benchmark.py`](src/benchmark.py) measures
+*functional* correctness on **HumanEval** (and MBPP): it generates candidates,
+executes them against the benchmark's hidden tests in a sandboxed subprocess, and
+reports the unbiased **pass@k** estimator.
+
+```bash
+python src/benchmark.py --oracle --limit 20                    # validate the harness (~100%)
+python src/benchmark.py --dataset humaneval --n-samples 10     # score the model
+```
+
+> Reality check: this ~15M model scores **pass@1 = 0%** on HumanEval — it learns
+> Python *form*, not algorithmic *correctness*. Use pass@k as the north-star
+> metric and validation perplexity as the day-to-day signal.
+
+### Optional — cleaner data + trustworthy validation
+[`src/prepare_data_clean.py`](src/prepare_data_clean.py) is a higher-quality data
+pass: it unwraps JSON-artifact responses, drops code that doesn't parse,
+deduplicates near-identical functions, and writes a **leak-free** random
+train/val split (`tokens_train.bin` / `tokens_val.bin`). Run it after Step 2;
+`train_subword.py` uses it automatically when present, so validation perplexity
+finally measures generalization instead of memorized duplicates.
+
+```bash
+python src/prepare_data_clean.py
+```
+
 ---
 
 ## Model architecture
