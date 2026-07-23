@@ -14,6 +14,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.utils.checkpoint
 
 
 @dataclass
@@ -25,6 +26,7 @@ class GPTConfig:
     n_embd: int = 384
     dropout: float = 0.1
     bias: bool = True
+    grad_checkpoint: bool = False   # trade compute for memory (bigger models on small GPUs)
 
     @staticmethod
     def from_dict(d: dict) -> "GPTConfig":
@@ -123,7 +125,10 @@ class GPT(nn.Module):
         pos = torch.arange(T, device=idx.device)
         x = self.drop(self.token_emb(idx) + self.pos_emb(pos))
         for block in self.blocks:
-            x = block(x)
+            if self.cfg.grad_checkpoint and self.training:
+                x = torch.utils.checkpoint.checkpoint(block, x, use_reentrant=False)
+            else:
+                x = block(x)
         x = self.ln_f(x)
 
         if targets is not None:

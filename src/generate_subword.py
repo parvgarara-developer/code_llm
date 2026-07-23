@@ -23,14 +23,14 @@ CKPT_DIR = BASE_DIR / "checkpoints"
 CONFIG_FILE = CKPT_DIR / "gpt_subword_config.json"
 
 
-def load_model_and_tokenizer(prefer_best=True, device=None):
+def load_model_and_tokenizer(prefix="gpt_subword", prefer_best=True, device=None):
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-    cfg_d = json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
+    cfg_d = json.loads((CKPT_DIR / f"{prefix}_config.json").read_text(encoding="utf-8"))
     cfg = GPTConfig.from_dict(cfg_d)
 
-    ckpt = CKPT_DIR / "gpt_subword_best.pt"
+    ckpt = CKPT_DIR / f"{prefix}_best.pt"
     if not (prefer_best and ckpt.exists()):
-        ckpt = CKPT_DIR / "gpt_subword.pt"
+        ckpt = CKPT_DIR / f"{prefix}.pt"
     state = torch.load(ckpt, map_location=device, weights_only=False)
     model = GPT(cfg).to(device)
     model.load_state_dict(state["model"])
@@ -67,9 +67,11 @@ if __name__ == "__main__":
     ap.add_argument("--top-k", type=int, default=40)
     ap.add_argument("--top-p", type=float, default=0.95)
     ap.add_argument("--rep", type=float, default=1.15)
+    ap.add_argument("--sft", action="store_true", help="use the SFT checkpoint (gpt_sft)")
     args = ap.parse_args()
 
-    model, sp, cfg_d, device, ckpt = load_model_and_tokenizer()
+    model, sp, cfg_d, device, ckpt = load_model_and_tokenizer(
+        prefix="gpt_sft" if args.sft else "gpt_subword")
     print(f"loaded {ckpt.name} on {device}\n")
     text = generate_one(model, sp, cfg_d, device, args.task,
                         max_new_tokens=args.tokens, temperature=args.temperature,

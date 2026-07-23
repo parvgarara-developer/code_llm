@@ -31,7 +31,14 @@ PROMPTS = [
 ]
 
 if __name__ == "__main__":
-    model, sp, cfg_d, device, ckpt = load_model_and_tokenizer()
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--sft", action="store_true", help="evaluate the SFT checkpoint (gpt_sft)")
+    args = ap.parse_args()
+
+    model, sp, cfg_d, device, ckpt = load_model_and_tokenizer(
+        prefix="gpt_sft" if args.sft else "gpt_subword")
+    out_path = OUTPUT_DIR / ("evaluation_sft.txt" if args.sft else "evaluation_subword.txt")
     print(f"loaded {ckpt.name} on {device}")
 
     blocks = []
@@ -44,5 +51,5 @@ if __name__ == "__main__":
         blocks.append(block)
         print(f"  [{i}/{len(PROMPTS)}] done")
 
-    OUTPUT_PATH.write_text("".join(blocks), encoding="utf-8")
-    print(f"\nSaved -> {OUTPUT_PATH}")
+    out_path.write_text("".join(blocks), encoding="utf-8")
+    print(f"\nSaved -> {out_path}")
