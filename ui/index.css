@@ -825,3 +825,197 @@ code {
         filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.4));
     }
 }
+
+/* ==========================================================================
+   Theme Toggle Button Styles
+   ========================================================================== */
+.theme-toggle-btn {
+    background-color: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-secondary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-right: 8px;
+}
+
+.theme-toggle-btn:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    transform: rotate(15deg);
+}
+
+body:not(.light-theme) .sun-icon {
+    display: block;
+}
+body:not(.light-theme) .moon-icon {
+    display: none;
+}
+body.light-theme .sun-icon {
+    display: none;
+}
+body.light-theme .moon-icon {
+    display: block;
+}
+
+/* ==========================================================================
+   Light Theme System Overrides
+   ========================================================================== */
+body.light-theme {
+    --bg-app: #f4f6fa;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-hover: rgba(255, 255, 255, 0.95);
+    --bg-sidebar: #ffffff;
+    --border-color: rgba(0, 0, 0, 0.08);
+    --border-color-focus: rgba(59, 130, 246, 0.5);
+    
+    /* Text Color Tokens */
+    --text-primary: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #9ca3af;
+    
+    /* Glassmorphism Shadows & Borders */
+    --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.06);
+    --glass-border: 1px solid rgba(0, 0, 0, 0.08);
+    
+    background-image: 
+        radial-gradient(at 10% 20%, rgba(99, 102, 241, 0.04) 0px, transparent 50%),
+        radial-gradient(at 90% 80%, rgba(6, 182, 212, 0.03) 0px, transparent 50%);
+}
+
+body.light-theme .app-header {
+    background-color: rgba(255, 255, 255, 0.85);
+    border-bottom: var(--glass-border);
+}
+
+body.light-theme .theme-toggle-btn {
+    background-color: rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--text-secondary);
+}
+
+body.light-theme .theme-toggle-btn:hover {
+    background-color: rgba(0, 0, 0, 0.08);
+    color: #000;
+}
+
+body.light-theme select {
+    background-color: rgba(0, 0, 0, 0.02);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    color: var(--text-primary);
+}
+
+body.light-theme select option {
+    background-color: #ffffff;
+    color: #1f2937;
+}
+
+body.light-theme select:focus {
+    background-color: rgba(0, 0, 0, 0.04);
+    border-color: var(--accent-blue);
+}
+
+body.light-theme input[type="range"] {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .setup-card {
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(6, 182, 212, 0.03));
+    border-color: rgba(99, 102, 241, 0.1);
+}
+
+body.light-theme .setup-code {
+    background-color: #f1f5f9;
+    color: #1f2937;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .template-tag {
+    background-color: rgba(0, 0, 0, 0.03);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .template-tag:hover {
+    background-color: rgba(59, 130, 246, 0.08);
+    color: var(--accent-blue);
+    border-color: rgba(59, 130, 246, 0.2);
+}
+
+body.light-theme textarea {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+body.light-theme textarea:focus {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+body.light-theme .action-footer {
+    background-color: rgba(0, 0, 0, 0.01);
+}
+
+body.light-theme .editor-container,
+body.light-theme .terminal-body,
+body.light-theme .attention-grid-wrapper {
+    background-color: #f8fafc;
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .line-numbers {
+    background-color: #f1f5f9;
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
+    color: #94a3b8;
+}
+
+body.light-theme .code-display {
+    color: #1e293b;
+}
+
+body.light-theme .stats-bar {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+body.light-theme .stat-value {
+    color: #1e293b;
+}
+
+body.light-theme .terminal-body {
+    background-color: #f8fafc;
+}
+
+body.light-theme .vis-tab-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+body.light-theme .token-chip {
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme ::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+body.light-theme .logo-text h1 {
+    color: #0f172a;
+}
+
+/* ==========================================================================
+   Light Theme Python Syntax Highlighting Overrides
+   ========================================================================== */
+body.light-theme .hl-keyword { color: #d73a49; font-weight: 600; }
+body.light-theme .hl-def { color: #6f42c1; }
+body.light-theme .hl-name { color: #005cc5; }
+body.light-theme .hl-str { color: #032f62; }
+body.light-theme .hl-num { color: #005cc5; }
+body.light-theme .hl-comment { color: #6a737d; }
+body.light-theme .hl-op { color: #d73a49; }
+

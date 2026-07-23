@@ -30,6 +30,7 @@ const elements = {
     repVal: document.getElementById('rep-val'),
     
     // Buttons & Textarea
+    btnThemeToggle: document.getElementById('btn-theme-toggle'),
     promptInput: document.getElementById('prompt-input'),
     btnClearPrompt: document.getElementById('btn-clear-prompt'),
     btnGenerate: document.getElementById('btn-generate'),
@@ -155,6 +156,7 @@ const MOCK_TOKENS_DICT = [
 // ==========================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     setupEventListeners();
     checkBackendStatus();
     setInterval(checkBackendStatus, 15000); // Check status every 15s
@@ -178,6 +180,9 @@ function setupEventListeners() {
     elements.btnGenerate.addEventListener('click', startGeneration);
 
     elements.btnCopyCode.addEventListener('click', copyCodeToClipboard);
+
+    // Theme Toggle
+    elements.btnThemeToggle.addEventListener('click', toggleTheme);
 
     elements.btnClearLogs.addEventListener('click', () => {
         elements.terminalBody.innerHTML = '';
@@ -233,6 +238,22 @@ function bindSlider(slider, valDisplay, formatter = (v) => v) {
     slider.addEventListener('input', (e) => {
         valDisplay.innerText = formatter(e.target.value);
     });
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+    }
+}
+
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-theme');
+    localStorage.setItem('theme', isLight ? 'light' : 'dark');
+    logConsole(`UI Theme switched to ${isLight ? 'Light' : 'Dark'} Mode`, "system");
+    
+    // Redraw attention placeholder with correct theme colors
+    drawPlaceholderAttention();
 }
 
 // ==========================================================================
@@ -566,10 +587,11 @@ function generateAttentionMatrix(dim) {
 }
 
 function drawPlaceholderAttention() {
-    canvasCtx.fillStyle = '#080c14';
+    const isLight = document.body.classList.contains('light-theme');
+    canvasCtx.fillStyle = isLight ? '#f8fafc' : '#080c14';
     canvasCtx.fillRect(0, 0, elements.attentionCanvas.width, elements.attentionCanvas.height);
     
-    canvasCtx.strokeStyle = 'rgba(255,255,255,0.05)';
+    canvasCtx.strokeStyle = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
     canvasCtx.lineWidth = 1;
     for (let i = 0; i < elements.attentionCanvas.width; i += 20) {
         canvasCtx.beginPath();
@@ -583,7 +605,7 @@ function drawPlaceholderAttention() {
         canvasCtx.stroke();
     }
     
-    canvasCtx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    canvasCtx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.2)';
     canvasCtx.font = '11px Outfit';
     canvasCtx.textAlign = 'center';
     canvasCtx.fillText("Waiting for generation...", elements.attentionCanvas.width / 2, elements.attentionCanvas.height / 2);
@@ -596,7 +618,8 @@ function drawAttentionGrid(matrix, currentTokenIndex, maxDim) {
     const cellW = width / maxDim;
     const cellH = height / maxDim;
     
-    canvasCtx.fillStyle = '#05070c';
+    const isLight = document.body.classList.contains('light-theme');
+    canvasCtx.fillStyle = isLight ? '#f8fafc' : '#05070c';
     canvasCtx.fillRect(0, 0, width, height);
     
     for (let i = 0; i < maxDim; i++) {
