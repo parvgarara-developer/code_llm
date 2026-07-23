@@ -69,9 +69,11 @@ class CORSRequestHandler(BaseHTTPRequestHandler):
         if path == '/' or path == '':
             path = '/index.html'
         
-        # Prevent directory traversal
-        safe_path = os.path.normpath(path).lstrip('/')
-        file_path = BASE_DIR / 'ui' / safe_path
+        # Prevent directory traversal and normalize path
+        parts = [p for p in path.replace('\\', '/').split('/') if p and p != '..' and p != '.']
+        file_path = BASE_DIR / 'ui'
+        for part in parts:
+            file_path = file_path / part
 
         if not file_path.exists() or file_path.is_dir():
             self.send_error(404, "File Not Found")
