@@ -173,11 +173,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function setupEventListeners() {
     // Slider binds
-    bindSlider(elements.tempSlider, elements.tempVal, (v) => parseFloat(v).toFixed(2));
-    bindSlider(elements.topkSlider, elements.topkVal);
-    bindSlider(elements.toppSlider, elements.toppVal, (v) => parseFloat(v).toFixed(2));
-    bindSlider(elements.tokensSlider, elements.tokensVal);
-    bindSlider(elements.repSlider, elements.repVal, (v) => parseFloat(v).toFixed(2));
+    if (elements.tempSlider) bindSlider(elements.tempSlider, elements.tempVal, (v) => parseFloat(v).toFixed(2));
+    if (elements.topkSlider) bindSlider(elements.topkSlider, elements.topkVal);
+    if (elements.toppSlider) bindSlider(elements.toppSlider, elements.toppVal, (v) => parseFloat(v).toFixed(2));
+    if (elements.tokensSlider) bindSlider(elements.tokensSlider, elements.tokensVal);
+    if (elements.repSlider) bindSlider(elements.repSlider, elements.repVal, (v) => parseFloat(v).toFixed(2));
 
     // Input handlers
     elements.btnClearPrompt.addEventListener('click', () => {
@@ -216,23 +216,29 @@ function setupEventListeners() {
     });
 
     // Model select change handler
-    elements.modelSelect.addEventListener('change', (e) => {
-        const val = e.target.value;
-        logConsole(`Model target switched to: ${val}`, "info");
-        
-        if (backendConnected && availableModels[val]) {
-            const modelInfo = availableModels[val];
-            elements.modelDetails.innerText = modelInfo.exists 
-                ? "Status: Available (Loaded)" 
-                : "Status: " + modelInfo.details;
-        } else {
-            if (val === 'gpt_subword') {
-                elements.modelDetails.innerText = "Subword BPE: Requires code_bpe.model tokenizer";
+    if (elements.modelSelect) {
+        elements.modelSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            logConsole(`Model target switched to: ${val}`, "info");
+            
+            if (backendConnected && availableModels[val]) {
+                const modelInfo = availableModels[val];
+                if (elements.modelDetails) {
+                    elements.modelDetails.innerText = modelInfo.exists 
+                        ? "Status: Available (Loaded)" 
+                        : "Status: " + modelInfo.details;
+                }
             } else {
-                elements.modelDetails.innerText = "Char-level: Requires char_vocab.json & checkpoint";
+                if (elements.modelDetails) {
+                    if (val === 'gpt_subword') {
+                        elements.modelDetails.innerText = "Subword BPE: Requires code_bpe.model tokenizer";
+                    } else {
+                        elements.modelDetails.innerText = "Char-level: Requires char_vocab.json & checkpoint";
+                    }
+                }
             }
-        }
-    });
+        });
+    }
 
     // Visualizer tabs switching
     elements.tabs.forEach(tab => {
@@ -314,10 +320,12 @@ async function checkBackendStatus() {
         elements.backendBadge.querySelector('.status-text').innerText = "Connected to PyTorch API";
         
         // Update specific selected model status
-        const activeModel = elements.modelSelect.value;
-        if (availableModels[activeModel]) {
+        const activeModel = elements.modelSelect ? elements.modelSelect.value : 'gpt_subword';
+        if (elements.modelSelect && availableModels[activeModel]) {
             const info = availableModels[activeModel];
-            elements.modelDetails.innerText = info.exists ? "Ready to run inference" : info.details;
+            if (elements.modelDetails) {
+                elements.modelDetails.innerText = info.exists ? "Ready to run inference" : info.details;
+            }
         }
         
         // Update stats
@@ -330,7 +338,9 @@ async function checkBackendStatus() {
         backendConnected = false;
         elements.backendBadge.className = "status-badge status-offline";
         elements.backendBadge.querySelector('.status-text').innerText = "Simulated Mode (Local API Offline)";
-        elements.modelDetails.innerText = "Simulating: No PyTorch installation required";
+        if (elements.modelDetails) {
+            elements.modelDetails.innerText = "Simulating: No PyTorch installation required";
+        }
         elements.statDevice.innerText = "Browser VM";
     }
 }
@@ -402,13 +412,13 @@ async function startGeneration() {
 
 async function runRealGeneration(prompt) {
     const params = {
-        model: elements.modelSelect.value,
+        model: elements.modelSelect ? elements.modelSelect.value : 'gpt_subword',
         prompt: prompt,
-        temperature: parseFloat(elements.tempSlider.value),
-        top_k: parseInt(elements.topkSlider.value),
-        top_p: parseFloat(elements.toppSlider.value),
-        max_tokens: parseInt(elements.tokensSlider.value),
-        repetition_penalty: parseFloat(elements.repSlider.value)
+        temperature: elements.tempSlider ? parseFloat(elements.tempSlider.value) : 0.8,
+        top_k: elements.topkSlider ? parseInt(elements.topkSlider.value) : 40,
+        top_p: elements.toppSlider ? parseFloat(elements.toppSlider.value) : 0.95,
+        max_tokens: elements.tokensSlider ? parseInt(elements.tokensSlider.value) : 256,
+        repetition_penalty: elements.repSlider ? parseFloat(elements.repSlider.value) : 1.15
     };
 
     logConsole(`Executing request on backend using '${params.model}' model...`, "info");
@@ -569,7 +579,7 @@ async function animateTokenStreaming(codeText, stats) {
         elements.tokenChipsContainer.scrollTop = elements.tokenChipsContainer.scrollHeight;
         
         // Dynamic speed control based on temperature setting
-        const temp = parseFloat(elements.tempSlider.value);
+        const temp = elements.tempSlider ? parseFloat(elements.tempSlider.value) : 0.8;
         const delayMs = Math.max(15, Math.min(100, (temp * 30)));
         await delay(delayMs);
     }
