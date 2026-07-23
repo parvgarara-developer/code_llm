@@ -135,9 +135,22 @@
                         <button id="btn-clear-prompt" class="icon-btn" title="Clear prompt"><i class="fa-solid fa-xmark"></i></button>
                     </div>
                     <div class="action-footer">
-                        <button id="btn-generate" class="primary-btn">
-                            <i class="fa-solid fa-play"></i> Generate Code
-                        </button>
+                        <div class="generation-controls">
+                            <button id="btn-generate" class="primary-btn">
+                                <i class="fa-solid fa-play"></i> Generate Code
+                            </button>
+                            <div id="step-controls" class="step-controls-group hidden">
+                                <button id="btn-pause-resume" class="secondary-btn" title="Pause Generation">
+                                    <i class="fa-solid fa-pause"></i>
+                                </button>
+                                <button id="btn-step-forward" class="secondary-btn" title="Step 1 Token Forward" disabled>
+                                    <i class="fa-solid fa-forward-step"></i> Step
+                                </button>
+                                <button id="btn-stop" class="secondary-btn btn-danger" title="Stop Generation">
+                                    <i class="fa-solid fa-stop"></i> Stop
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

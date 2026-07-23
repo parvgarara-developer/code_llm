@@ -1046,3 +1046,33 @@ body.light-theme .hl-num { color: #005cc5; }
 body.light-theme .hl-comment { color: #6a737d; }
 body.light-theme .hl-op { color: #d73a49; }
 
+/* ==========================================================================
+   Step-by-Step Control Layouts
+   ========================================================================== */
+.hidden {
+    display: none !important;
+}
+
+.generation-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.step-controls-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-danger {
+    color: var(--accent-red) !important;
+    border-color: rgba(239, 68, 68, 0.2) !important;
+}
+
+.btn-danger:hover {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    border-color: rgba(239, 68, 68, 0.4) !important;
+}
+
+

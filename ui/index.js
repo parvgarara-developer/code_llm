@@ -9,6 +9,8 @@ const API_BASE = window.location.origin === "file://" || window.location.origin.
 // State management
 let backendConnected = false;
 let isGenerating = false;
+let isPaused = false;
+let stepTriggered = false;
 let availableModels = {};
 
 // Cache DOM Elements
@@ -31,6 +33,10 @@ const elements = {
     
     // Buttons & Textarea
     btnThemeToggle: document.getElementById('btn-theme-toggle'),
+    stepControls: document.getElementById('step-controls'),
+    btnPauseResume: document.getElementById('btn-pause-resume'),
+    btnStepForward: document.getElementById('btn-step-forward'),
+    btnStop: document.getElementById('btn-stop'),
     promptInput: document.getElementById('prompt-input'),
     btnClearPrompt: document.getElementById('btn-clear-prompt'),
     btnGenerate: document.getElementById('btn-generate'),
@@ -184,6 +190,11 @@ function setupEventListeners() {
     // Theme Toggle
     elements.btnThemeToggle.addEventListener('click', toggleTheme);
 
+    // Step-by-Step Generation Controls
+    elements.btnPauseResume.addEventListener('click', togglePauseResume);
+    elements.btnStepForward.addEventListener('click', triggerStep);
+    elements.btnStop.addEventListener('click', stopGeneration);
+
     elements.btnClearLogs.addEventListener('click', () => {
         elements.terminalBody.innerHTML = '';
         logConsole("Logs console cleared.", "system");
@@ -254,6 +265,33 @@ function toggleTheme() {
     
     // Redraw attention placeholder with correct theme colors
     drawPlaceholderAttention();
+}
+
+function togglePauseResume() {
+    if (!isGenerating) return;
+    isPaused = !isPaused;
+    if (isPaused) {
+        elements.btnPauseResume.innerHTML = `<i class="fa-solid fa-play"></i>`;
+        elements.btnPauseResume.title = "Resume Generation";
+        logConsole("Generation paused by user.", "warn");
+    } else {
+        elements.btnPauseResume.innerHTML = `<i class="fa-solid fa-pause"></i>`;
+        elements.btnPauseResume.title = "Pause Generation";
+        logConsole("Generation resumed.", "info");
+    }
+}
+
+function triggerStep() {
+    if (!isGenerating || !isPaused) return;
+    stepTriggered = true;
+    logConsole("Stepped forward 1 token.", "info");
+}
+
+function stopGeneration() {
+    if (!isGenerating) return;
+    isGenerating = false;
+    isPaused = false;
+    logConsole("Generation aborted by user.", "error");
 }
 
 // ==========================================================================
@@ -330,6 +368,12 @@ async function startGeneration() {
     }
     
     isGenerating = true;
+    isPaused = false;
+    stepTriggered = false;
+    elements.btnPauseResume.innerHTML = `<i class="fa-solid fa-pause"></i>`;
+    elements.btnPauseResume.title = "Pause Generation";
+    elements.stepControls.classList.remove('hidden');
+
     elements.btnGenerate.classList.add('generating');
     elements.btnGenerate.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Generating...`;
     elements.codeOutput.innerHTML = '';
@@ -344,6 +388,8 @@ async function startGeneration() {
     }
     
     isGenerating = false;
+    isPaused = false;
+    elements.stepControls.classList.add('hidden');
     elements.btnGenerate.classList.remove('generating');
     elements.btnGenerate.innerHTML = `<i class="fa-solid fa-play"></i> Generate Code`;
 }
@@ -469,7 +515,32 @@ async function animateTokenStreaming(codeText, stats) {
     const maxAttnDim = Math.min(tokens.length, 32);
     let attnWeights = generateAttentionMatrix(maxAttnDim);
     
+    let totalPauseDurationMs = 0;
+
     for (let i = 0; i < tokens.length; i++) {
+        if (!isGenerating) {
+            break;
+        }
+
+        // Pause/Step check
+        if (isPaused) {
+            const pauseStart = Date.now();
+            elements.btnStepForward.disabled = false;
+            while (isPaused && isGenerating) {
+                if (stepTriggered) {
+                    stepTriggered = false;
+                    break;
+                }
+                await delay(30);
+            }
+            elements.btnStepForward.disabled = true;
+            totalPauseDurationMs += (Date.now() - pauseStart);
+        }
+
+        if (!isGenerating) {
+            break;
+        }
+
         currentText += tokens[i];
         
         // Highlight code
@@ -486,7 +557,7 @@ async function animateTokenStreaming(codeText, stats) {
         drawAttentionGrid(attnWeights, i, maxAttnDim);
         
         // Calculate real-time speed stats
-        const elapsedSec = (Date.now() - startTimestamp) / 1000;
+        const elapsedSec = (Date.now() - startTimestamp - totalPauseDurationMs) / 1000;
         elements.statTime.innerText = `${elapsedSec.toFixed(2)}s`;
         elements.statTokens.innerText = `${i + 1} / ${tokens.length}`;
         elements.statSpeed.innerText = `${((i + 1) / Math.max(elapsedSec, 0.01)).toFixed(1)} tok/s`;
