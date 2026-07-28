@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeLLM — GPT Code Playground</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Animated Cyberpunk Backdrop -->
+    <div class="backdrop-grid"></div>
+    <div class="backdrop-glow blob-1"></div>
+    <div class="backdrop-glow blob-2"></div>
+
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <header class="app-header">
+            <div class="header-logo">
+                <i class="fa-solid fa-brain-circuit logo-icon"></i>
+                <div class="logo-text">
+                    <h1>CodeLLM</h1>
+                    <span>GPT Trained from Scratch</span>
+                </div>
+            </div>
+            <div class="header-status">
+                <button id="btn-theme-toggle" class="theme-toggle-btn" title="Toggle Theme">
+                    <i class="fa-regular fa-sun sun-icon"></i>
+                    <i class="fa-regular fa-moon moon-icon"></i>
+                </button>
+                <div id="backend-status-badge" class="status-badge status-offline">
+                    <span class="status-dot"></span>
+                    <span class="status-text">Checking Backend Status...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-workspace">
+
+
+            <!-- Playground Center Canvas -->
+            <section class="playground-panel">
+                <!-- Prompt Area -->
+                <div class="playground-section card prompt-card">
+                    <div class="card-header">
+                        <h2><i class="fa-regular fa-keyboard"></i> Natural Language Prompt</h2>
+                        <div class="prompt-templates">
+                            <span class="template-tag" data-prompt="Write a Python function to check if a string is a palindrome.">Palindrome</span>
+                            <span class="template-tag" data-prompt="Write a Python function to count vowels in a string.">Vowels</span>
+                            <span class="template-tag" data-prompt="Write a Python function to reverse a linked list.">Reverse List</span>
+                            <span class="template-tag" data-prompt="Write a Python function to do binary search in a sorted array.">Binary Search</span>
+                            <span class="template-tag" data-prompt="Write a Python function to generate the Fibonacci sequence.">Fibonacci</span>
+                        </div>
+                    </div>
+                    <div class="textarea-container">
+                        <textarea id="prompt-input" placeholder="Type a request (e.g., 'Write a Python function to reverse a string') or select a template above..."></textarea>
+                        <button id="btn-clear-prompt" class="icon-btn" title="Clear prompt"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <div class="action-footer">
+                        <div class="generation-controls">
+                            <button id="btn-generate" class="primary-btn">
+                                <i class="fa-solid fa-play"></i> Generate Code
+                            </button>
+                            <div id="step-controls" class="step-controls-group hidden">
+                                <button id="btn-pause-resume" class="secondary-btn" title="Pause Generation">
+                                    <i class="fa-solid fa-pause"></i>
+                                </button>
+                                <button id="btn-step-forward" class="secondary-btn" title="Step 1 Token Forward" disabled>
+                                    <i class="fa-solid fa-forward-step"></i> Step
+                                </button>
+                                <button id="btn-stop" class="secondary-btn btn-danger" title="Stop Generation">
+                                    <i class="fa-solid fa-stop"></i> Stop
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Editor Area -->
+                <div class="playground-section card output-card flex-grow">
+                    <div class="card-header">
+                        <h2><i class="fa-solid fa-code"></i> Generated Output</h2>
+                        <div class="output-actions">
+                            <button id="btn-copy-code" class="secondary-btn" title="Copy code to clipboard">
+                                <i class="fa-regular fa-copy"></i> Copy
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="editor-container">
+                        <div class="line-numbers" id="line-numbers">
+                            <span>1</span>
+                        </div>
+                        <pre class="code-display"><code id="code-output" class="language-python"># Output will be generated here...</code></pre>
+                    </div>
+
+                    <!-- Output Stats Footer -->
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <span class="stat-label">Inference Time:</span>
+                            <span id="stat-time" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Tokens Generated:</span>
+                            <span id="stat-tokens" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Tokens / Sec:</span>
+                            <span id="stat-speed" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Hardware Device:</span>
+                            <span id="stat-device" class="stat-value">—</span>
+                        </div>
+                        <div class="stat-item sparkline-container" title="Neural computation wave">
+                            <span class="stat-label">Neural Logits Wave:</span>
+                            <canvas id="sparkline-canvas" width="140" height="24"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Visualizer & Terminal Logs -->
+            <section class="visualizer-panel">
+                <!-- Interactive Tokenizer / Attention Visualizer -->
+                <div class="panel-section visualizer-card">
+                    <h3 class="section-title"><i class="fa-solid fa-eye"></i> Transformer Mechanics</h3>
+                    <div class="visualizer-container">
+                        <div class="vis-tab-header">
+                            <button class="vis-tab active" data-tab="attention">Attention Grid</button>
+                            <button class="vis-tab" data-tab="tokens">Token Shards</button>
+                        </div>
+                        <div class="vis-tab-content">
+                            <!-- Attention Matrix View -->
+                            <div id="vis-attention" class="tab-pane active">
+                                <div class="attention-description">
+                                    Visualizing Multi-Head Self-Attention layers weights:
+                                </div>
+                                <div class="attention-grid-wrapper">
+                                    <canvas id="attention-canvas" width="200" height="200"></canvas>
+                                </div>
+                                <div class="attention-legend">
+                                    <span>Query Token</span>
+                                    <span class="arrow"><i class="fa-solid fa-arrow-right"></i></span>
+                                    <span>Key Token Weight</span>
+                                </div>
+                            </div>
+                            <!-- Token Shards View -->
+                            <div id="vis-tokens" class="tab-pane">
+                                <div class="token-description">
+                                    How sentencepiece splits raw code into BPE token IDs:
+                                </div>
+                                <div id="token-chips-container" class="token-chips">
+                                    <div class="empty-chips">Generate code to view tokenized shards.</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terminal logs -->
+                <div class="panel-section terminal-card">
+                    <div class="terminal-header">
+                        <span class="terminal-title"><i class="fa-solid fa-terminal"></i> Pipeline Console Logs</span>
+                        <button id="btn-clear-logs" class="icon-btn" title="Clear console"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <div class="terminal-body" id="terminal-body">
+                        <div class="terminal-line log-system">[SYSTEM] CodeLLM Console Initialized. Ready for inference.</div>
+                        <div class="terminal-line log-warn">[WARN] Backend offline: Using client-side simulation.</div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    
+    <script src="index.js"></script>
+</body>
+</html>
