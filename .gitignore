@@ -11,3 +11,5 @@ data/
 checkpoints/gpt_large_sharded.pt
 checkpoints/gpt_subword.pt
 checkpoints/gpt_subword_best.pt
+checkpoints/gpt_sft.pt
+checkpoints/gpt_sft_best.pt

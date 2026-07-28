@@ -127,7 +127,7 @@ class CORSRequestHandler(BaseHTTPRequestHandler):
             self.send_json_response(400, {"error": "Invalid JSON format"})
             return
 
-        model_name = req.get('model', 'gpt_opencode')
+        model_name = req.get('model', 'gpt_subword')
         prompt = req.get('prompt', '')
         temperature = float(req.get('temperature', 0.8))
         top_k = req.get('top_k', 40)
@@ -218,57 +218,77 @@ class CORSRequestHandler(BaseHTTPRequestHandler):
             "details": f"Checkpoint: {'Found' if (subword_best.exists() or subword_last.exists()) else 'Missing'}, Tokenizer: {'Found' if tokenizer_path.exists() else 'Missing'}"
         }
 
+        # 4. gpt_sft (instruction-tuned subword, response-only fine-tune)
+        sft_best = BASE_DIR / "checkpoints" / "gpt_sft_best.pt"
+        sft_last = BASE_DIR / "checkpoints" / "gpt_sft.pt"
+        sft_cfg = BASE_DIR / "checkpoints" / "gpt_sft_config.json"
+        sft_exists = (sft_best.exists() or sft_last.exists()) and sft_cfg.exists() and tokenizer_path.exists()
+        available["gpt_sft"] = {
+            "name": "GPT SFT (Instruction-tuned, subword)",
+            "exists": sft_exists,
+            "type": "subword",
+            "details": f"Checkpoint: {'Found' if (sft_best.exists() or sft_last.exists()) else 'Missing'}, Tokenizer: {'Found' if tokenizer_path.exists() else 'Missing'}"
+        }
+
         return available
+
+    def load_subword_model(self, model_name, device, logs):
+        """Load (and cache) a subword model + tokenizer. Works for any
+        checkpoint that follows the {name}_config.json / {name}[_best].pt
+        convention (gpt_subword, gpt_sft, ...)."""
+        if model_name in LOADED_MODELS:
+            logs.append(f"[INFO] Using cached '{model_name}' model.")
+            return LOADED_MODELS[model_name]
+
+        from model import GPT, GPTConfig
+        cfg_file = BASE_DIR / "checkpoints" / f"{model_name}_config.json"
+        if not cfg_file.exists():
+            raise FileNotFoundError(f"{cfg_file.name} not found in checkpoints/")
+        cfg_d = json.loads(cfg_file.read_text(encoding="utf-8"))
+        cfg = GPTConfig.from_dict(cfg_d)
+
+        ckpt_path = BASE_DIR / "checkpoints" / f"{model_name}_best.pt"
+        if not ckpt_path.exists():
+            ckpt_path = BASE_DIR / "checkpoints" / f"{model_name}.pt"
+        if not ckpt_path.exists():
+            raise FileNotFoundError(f"{model_name}_best.pt or {model_name}.pt not found.")
+
+        logs.append(f"[INFO] Loading {model_name} checkpoint from {ckpt_path.name}...")
+        state = torch.load(ckpt_path, map_location=device, weights_only=False)
+        model = GPT(cfg).to(device)
+        model.load_state_dict(state["model"])
+        model.eval()
+
+        tok_name = cfg_d.get("tokenizer_model", "code_bpe.model")
+        tokenizer_path = BASE_DIR / "data" / "processed" / tok_name
+        if not tokenizer_path.exists():
+            raise FileNotFoundError(f"{tok_name} tokenizer not found.")
+        logs.append("[INFO] Loading SentencePiece tokenizer...")
+        sp = spm.SentencePieceProcessor()
+        sp.load(str(tokenizer_path))
+
+        LOADED_MODELS[model_name] = (model, sp, cfg_d)
+        logs.append(f"[INFO] Cached '{model_name}' (subsequent requests reuse it).")
+        return LOADED_MODELS[model_name]
 
     def generate_code(self, model_name, task_prompt, max_new_tokens, temperature, top_k, top_p, repetition_penalty):
         logs = []
         device = "cuda" if torch.cuda.is_available() else "cpu"
         logs.append(f"[INFO] Using device: {device.upper()}")
 
-        if model_name == "gpt_subword":
+        if model_name in ("gpt_subword", "gpt_sft"):
             if not HAS_SENTENCEPIECE:
                 raise ImportError("sentencepiece is required to run the subword model.")
-            
-            # Load Subword Model
-            cfg_file = BASE_DIR / "checkpoints" / "gpt_subword_config.json"
-            if not cfg_file.exists():
-                raise FileNotFoundError("gpt_subword_config.json not found in checkpoints/")
-            
-            cfg_d = json.loads(cfg_file.read_text(encoding="utf-8"))
-            
-            # Import GPT from model.py
-            from model import GPT, GPTConfig
-            cfg = GPTConfig.from_dict(cfg_d)
 
-            ckpt_path = BASE_DIR / "checkpoints" / "gpt_subword_best.pt"
-            if not ckpt_path.exists():
-                ckpt_path = BASE_DIR / "checkpoints" / "gpt_subword.pt"
-            if not ckpt_path.exists():
-                raise FileNotFoundError("gpt_subword_best.pt or gpt_subword.pt not found.")
-
-            logs.append(f"[INFO] Loading subword checkpoint from {ckpt_path.name}...")
-            state = torch.load(ckpt_path, map_location=device, weights_only=False)
-            model = GPT(cfg).to(device)
-            model.load_state_dict(state["model"])
-            model.eval()
-
-            tokenizer_path = BASE_DIR / "data" / "processed" / "code_bpe.model"
-            if not tokenizer_path.exists():
-                raise FileNotFoundError("code_bpe.model tokenizer not found.")
-
-            logs.append("[INFO] Loading SentencePiece tokenizer...")
-            sp = spm.SentencePieceProcessor()
-            sp.load(str(tokenizer_path))
+            model, sp, cfg_d = self.load_subword_model(model_name, device, logs)
 
             prompt = f"### Instruction:\n{task_prompt}\n\n### Response:\n"
-            logs.append("[INFO] Tokenizing prompt...")
             ids = sp.encode(prompt)
             logs.append(f"[INFO] Prompt token count: {len(ids)} tokens")
 
             x = torch.tensor([ids], dtype=torch.long, device=device)
             logs.append(f"[INFO] Running generation (max_tokens={max_new_tokens}, temp={temperature}, top_k={top_k}, top_p={top_p})...")
-            
-            # Run generate
+
             y = model.generate(
                 x, max_new_tokens=max_new_tokens, temperature=temperature,
                 top_k=top_k, top_p=top_p, repetition_penalty=repetition_penalty,
@@ -278,15 +298,10 @@ class CORSRequestHandler(BaseHTTPRequestHandler):
             gen = out[len(ids):]
             if cfg_d["eos_id"] in gen:
                 gen = gen[: gen.index(cfg_d["eos_id"])]
-            
+
             decoded = sp.decode(ids + gen)
-            # Extract only the response section
             response_marker = "### Response:\n"
-            if response_marker in decoded:
-                generated_code = decoded.split(response_marker)[1]
-            else:
-                generated_code = decoded
-                
+            generated_code = decoded.split(response_marker)[1] if response_marker in decoded else decoded
             logs.append("[INFO] Code generation finished.")
             return generated_code, logs
 

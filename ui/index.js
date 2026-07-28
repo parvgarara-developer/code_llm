@@ -732,57 +732,54 @@ function drawAttentionGrid(matrix, currentTokenIndex, maxDim) {
 // Regex-based Code Highlighter (Python Syntax Engine)
 // ==========================================================================
 
-function highlightPython(code) {
-    // Simple sanitization
-    let escaped = code
+function escapeHtml(text) {
+    return text
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
-        
-    // List of regex patterns for basic python components
-    const patterns = [
-        { regex: /("(?:\\"|[^"])*"|'(?:\\'|[^'])*')/g, class: 'hl-str' }, // Strings
-        { regex: /(#.*)/g, class: 'hl-comment' }, // Comments
-        { regex: /\b(def|class|return|if|else|elif|while|for|in|import|from|as|try|except|raise|with|lambda|and|or|not|is|pass|assert|global|nonlocal|break|continue)\b/g, class: 'hl-keyword' }, // Keywords
-        { regex: /\b(self|cls)\b/g, class: 'hl-def' }, // Native objects
-        { regex: /\b(\w+)(?=\()/g, class: 'hl-name' }, // Function names
-        { regex: /\b(\d+)\b/g, class: 'hl-num' }, // Numbers
-        { regex: /([+\-*/%&|^~<>!=]=?)/g, class: 'hl-op' } // Operators
-    ];
-    
-    // We mask comments and strings to protect them from keyword highlighting
-    const maskedText = [];
-    let tempCode = escaped;
-    
-    // Mask Strings & Comments
-    let maskCounter = 0;
-    const stringCommentRegex = /("(?:\\"|[^"])*"|'(?:\\'|[^'])*'|#.*)/g;
-    
-    tempCode = tempCode.replace(stringCommentRegex, (match) => {
-        const mask = `___MASK_TOKEN_${maskCounter}___`;
-        const isComment = match.startsWith('#');
-        maskedText.push({
-            mask: mask,
-            original: match,
-            class: isComment ? 'hl-comment' : 'hl-str'
-        });
-        maskCounter++;
-        return mask;
-    });
+}
 
-    // Apply regex highlighting on the remaining unmasked structure
-    patterns.forEach(p => {
-        if (p.class !== 'hl-str' && p.class !== 'hl-comment') {
-            tempCode = tempCode.replace(p.regex, `<span class="${p.class}">$1</span>`);
-        }
-    });
+// Single-pass Python highlighter.
+//
+// The whole source is scanned exactly once with one alternating regex, and every
+// emitted chunk is HTML-escaped as it is written out. That matters: the previous
+// multi-pass version ran its rules over text that already contained the <span>
+// tags inserted by earlier rules, so the operator rule matched the '<', '>', '='
+// and '/' characters *of its own markup* and shredded it into things like
+//   <span class="hl-op">&lt;</span>span class=...
+// which surfaced in the UI as literal HTML instead of highlighted code.
+function highlightPython(code) {
+    const TOKEN = new RegExp([
+        // Triple-quoted docstrings first, then normal strings
+        /(?<str>"""[\s\S]*?"""|'''[\s\S]*?'''|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*')/.source,
+        /(?<comment>#[^\n]*)/.source,
+        /(?<keyword>\b(?:def|class|return|if|else|elif|while|for|in|import|from|as|try|except|finally|raise|with|lambda|and|or|not|is|None|True|False|pass|assert|global|nonlocal|break|continue|yield|async|await)\b)/.source,
+        /(?<builtin>\b(?:self|cls)\b)/.source,
+        /(?<name>\b[A-Za-z_]\w*(?=\s*\())/.source,
+        /(?<num>\b\d+(?:\.\d+)?\b)/.source,
+        /(?<op>[+\-*/%&|^~<>!=]=?)/.source
+    ].join('|'), 'g');
 
-    // Unmask strings and comments back, wrapping them in their highlighted span
-    maskedText.forEach(m => {
-        tempCode = tempCode.replace(m.mask, `<span class="${m.class}">${m.original}</span>`);
-    });
+    const classFor = (g) =>
+        g.str ? 'hl-str'
+        : g.comment ? 'hl-comment'
+        : g.keyword ? 'hl-keyword'
+        : g.builtin ? 'hl-def'
+        : g.name ? 'hl-name'
+        : g.num ? 'hl-num'
+        : 'hl-op';
 
-    return tempCode;
+    let html = '';
+    let lastIndex = 0;
+
+    for (const match of code.matchAll(TOKEN)) {
+        html += escapeHtml(code.slice(lastIndex, match.index));
+        html += `<span class="${classFor(match.groups)}">${escapeHtml(match[0])}</span>`;
+        lastIndex = match.index + match[0].length;
+    }
+    html += escapeHtml(code.slice(lastIndex));
+
+    return html;
 }
 
 // ==========================================================================
