@@ -671,10 +671,10 @@ function generateAttentionMatrix(dim) {
 
 function drawPlaceholderAttention() {
     const isLight = document.body.classList.contains('light-theme');
-    canvasCtx.fillStyle = isLight ? '#f8fafc' : '#080c14';
+    canvasCtx.fillStyle = isLight ? '#FFF6D6' : '#15151F';
     canvasCtx.fillRect(0, 0, elements.attentionCanvas.width, elements.attentionCanvas.height);
-    
-    canvasCtx.strokeStyle = isLight ? 'rgba(0,0,0,0.05)' : 'rgba(255,255,255,0.05)';
+
+    canvasCtx.strokeStyle = isLight ? 'rgba(0,0,0,0.10)' : 'rgba(255,255,255,0.07)';
     canvasCtx.lineWidth = 1;
     for (let i = 0; i < elements.attentionCanvas.width; i += 20) {
         canvasCtx.beginPath();
@@ -688,10 +688,10 @@ function drawPlaceholderAttention() {
         canvasCtx.stroke();
     }
     
-    canvasCtx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.4)' : 'rgba(255, 255, 255, 0.2)';
-    canvasCtx.font = '11px Outfit';
+    canvasCtx.fillStyle = isLight ? 'rgba(11, 11, 16, 0.55)' : 'rgba(245, 243, 234, 0.42)';
+    canvasCtx.font = '800 11px Outfit';
     canvasCtx.textAlign = 'center';
-    canvasCtx.fillText("Waiting for generation...", elements.attentionCanvas.width / 2, elements.attentionCanvas.height / 2);
+    canvasCtx.fillText("WAITING FOR GENERATION...", elements.attentionCanvas.width / 2, elements.attentionCanvas.height / 2);
 }
 
 function drawAttentionGrid(matrix, currentTokenIndex, maxDim) {
@@ -702,28 +702,32 @@ function drawAttentionGrid(matrix, currentTokenIndex, maxDim) {
     const cellH = height / maxDim;
     
     const isLight = document.body.classList.contains('light-theme');
-    canvasCtx.fillStyle = isLight ? '#f8fafc' : '#05070c';
+    canvasCtx.fillStyle = isLight ? '#FFF6D6' : '#15151F';
     canvasCtx.fillRect(0, 0, width, height);
-    
+
+    // Neo-brutalist heat scale: flat, quantised colour bands rather than a
+    // smooth alpha ramp, so every cell reads as a solid printed block.
+    const BANDS = [
+        { min: .75, fill: '#FF4FA8' },  // pink   — strongest attention
+        { min: .50, fill: '#8B5CF6' },  // violet
+        { min: .25, fill: '#16D2EE' },  // cyan
+        { min: .00, fill: isLight ? '#D6C6FF' : '#2C2C3D' }  // faint
+    ];
+
     for (let i = 0; i < maxDim; i++) {
         for (let j = 0; j < maxDim; j++) {
-            if (j > i) continue; // Masked causal attention
-            
-            let weight = matrix[i][j];
-            if (i > currentTokenIndex) {
-                // Not generated yet
-                continue;
-            }
-            
-            // Highlight the row currently being sampled
-            if (i === currentTokenIndex) {
-                canvasCtx.fillStyle = `rgba(6, 182, 212, ${weight * 0.95})`;
-            } else {
-                // Older layers: Indigo transparency
-                canvasCtx.fillStyle = `rgba(99, 102, 241, ${weight * 0.7})`;
-            }
-            
-            canvasCtx.fillRect(j * cellW, i * cellH, cellW - 1, cellH - 1);
+            if (j > i) continue;            // masked causal attention
+            if (i > currentTokenIndex) continue;  // not generated yet
+
+            const weight = matrix[i][j];
+
+            // The row currently being sampled is flagged in hot yellow.
+            canvasCtx.fillStyle = (i === currentTokenIndex)
+                ? '#FFD400'
+                : BANDS.find(b => weight >= b.min).fill;
+
+            // 2px gutter = visible hard grid between blocks
+            canvasCtx.fillRect(j * cellW, i * cellH, Math.max(cellW - 2, 1), Math.max(cellH - 2, 1));
         }
     }
 }
@@ -811,41 +815,14 @@ function delay(ms) {
 // ==========================================================================
 // 3D Glass Card Tilts
 // ==========================================================================
+/* Card hover is owned entirely by the stylesheet in the neo-brutalist system:
+   a flat translate into a hard offset shadow. The previous implementation wrote
+   an inline 3D perspective tilt plus a radial "shine" gradient on mousemove --
+   glassmorphism, which (a) overrode the CSS hover via inline style and (b) built
+   its gradient from --bg-card, a token the new palette no longer defines. So the
+   tilt is retired and only the shadow depth cue remains. */
 function setupCardTilts() {
-    const cards = document.querySelectorAll('.card, .panel-section');
-    
-    cards.forEach(card => {
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left; // x position within element
-            const y = e.clientY - rect.top;  // y position within element
-            
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
-            
-            // Calculate tilt angle (max 3 degrees to keep it elegant and readable)
-            const rotateX = ((centerY - y) / centerY) * 3;
-            const rotateY = ((x - centerX) / centerX) * 3;
-            
-            card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-            
-            // Add dynamic lighting/shine effect
-            const percentX = (x / rect.width) * 100;
-            const percentY = (y / rect.height) * 100;
-            
-            const isLight = document.body.classList.contains('light-theme');
-            if (isLight) {
-                card.style.backgroundImage = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255, 255, 255, 0.4) 0%, var(--bg-card) 85%)`;
-            } else {
-                card.style.backgroundImage = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(255, 255, 255, 0.04) 0%, var(--bg-card) 85%)`;
-            }
-        });
-        
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = '';
-            card.style.backgroundImage = '';
-        });
-    });
+    /* intentionally inert -- see comment above */
 }
 
 // ==========================================================================
@@ -877,32 +854,29 @@ function updateSparkline() {
     sparklinePoints.push(nextVal);
     sparklinePoints.shift();
     
-    // Draw line
+    // Neo-brutalist wave: flat colour, square caps, hard offset shadow.
     const isLight = document.body.classList.contains('light-theme');
-    const grad = ctx.createLinearGradient(0, 0, w, 0);
-    grad.addColorStop(0, '#6366f1'); // Indigo
-    grad.addColorStop(1, '#06b6d4'); // Cyan
-    
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    
-    // Drop shadow glow (only in dark mode for maximum contrast)
-    if (!isLight) {
-        ctx.shadowColor = 'rgba(6, 182, 212, 0.4)';
-        ctx.shadowBlur = 4;
-    } else {
-        ctx.shadowBlur = 0;
-    }
-    
-    ctx.beginPath();
-    const segmentWidth = w / (sparklinePoints.length - 1);
-    ctx.moveTo(0, sparklinePoints[0]);
-    for (let i = 1; i < sparklinePoints.length; i++) {
-        ctx.lineTo(i * segmentWidth, sparklinePoints[i]);
-    }
-    ctx.stroke();
-    
+
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'butt';
+    ctx.lineJoin = 'miter';
+
+    const drawWave = (offsetX, offsetY, color) => {
+        ctx.strokeStyle = color;
+        ctx.beginPath();
+        const seg = w / (sparklinePoints.length - 1);
+        ctx.moveTo(offsetX, sparklinePoints[0] + offsetY);
+        for (let i = 1; i < sparklinePoints.length; i++) {
+            ctx.lineTo(i * seg + offsetX, sparklinePoints[i] + offsetY);
+        }
+        ctx.stroke();
+    };
+
+    // hard drop shadow, then the wave itself on top
+    drawWave(2, 2, isLight ? '#0B0B10' : '#52299E');
+    drawWave(0, 0, isGenerating ? '#FF4FA8' : '#16D2EE');
+
     requestAnimationFrame(updateSparkline);
 }
+
